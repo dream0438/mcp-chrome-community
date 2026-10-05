@@ -23,8 +23,6 @@ export abstract class BaseBrowserToolExecutor implements ToolExecutor {
     allFrames: boolean = false,
     frameIds?: number[],
   ): Promise<void> {
-    console.log(`Injecting ${files.join(', ')} into tab ${tabId}`);
-
     // check if script is already injected
     try {
       const pingFrameId = frameIds?.[0];
@@ -44,18 +42,9 @@ export abstract class BaseBrowserToolExecutor implements ToolExecutor {
         ),
       ]);
 
-      if (response && response.status === 'pong') {
-        console.log(
-          `pong received for action '${this.name}' in tab ${tabId}. Assuming script is active.`,
-        );
-        return;
-      } else {
-        console.warn(`Unexpected ping response in tab ${tabId}:`, response);
-      }
-    } catch (error) {
-      console.error(
-        `ping content script failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      if (response && response.status === 'pong') return;
+    } catch {
+      // Expected when the helper isn't injected yet (no receiver); fall through to inject.
     }
 
     try {
@@ -71,7 +60,6 @@ export abstract class BaseBrowserToolExecutor implements ToolExecutor {
         injectImmediately,
         world,
       } as any);
-      console.log(`'${files.join(', ')}' injection successful for tab ${tabId}`);
     } catch (injectionError) {
       const errorMessage =
         injectionError instanceof Error ? injectionError.message : String(injectionError);
